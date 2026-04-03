@@ -1,0 +1,28 @@
+package com.cozyquoteforge.pccc.entity;
+
+import jakarta.persistence.*;
+import lombok.*;
+import java.util.UUID;
+
+@Entity
+@Table(name = "construction_workshops")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class ConstructionWorkshop {
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "construction_id", nullable = false)
+    @ToString.Exclude
+    private Construction construction;
+
+    @Column(nullable = false)
+    private String name;
+
+    @Column(name = "display_order")
+    private Integer displayOrder;
+}

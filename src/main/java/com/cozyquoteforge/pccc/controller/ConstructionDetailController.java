@@ -11,21 +11,31 @@ import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/constructions/{id}/details")
+@RequestMapping("/api/v1/constructions")
 @RequiredArgsConstructor
 public class ConstructionDetailController {
     private final ConstructionDetailService constructionDetailService;
 
-    @GetMapping
+    @GetMapping("/{id}/details")
     public ResponseEntity<ConstructionDetailDto> getConstructionDetails(@PathVariable UUID id) {
         return ResponseEntity.ok(constructionDetailService.getConstructionDetails(id));
     }
 
-    @PutMapping
+    @PutMapping("/{id}/details")
     public ResponseEntity<Map<String, Object>> saveConstructionDetails(
             @PathVariable UUID id,
             @RequestBody ConstructionDetailDto dto) {
         constructionDetailService.saveConstructionDetails(id, dto);
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Saved successfully");
+        response.put("status", 200);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/create-details")
+    public ResponseEntity<Map<String, Object>> postConstructionDetails(
+            @RequestBody ConstructionDetailDto dto) {
+        constructionDetailService.createConstructionDetails(dto);
         Map<String, Object> response = new HashMap<>();
         response.put("message", "Saved successfully");
         response.put("status", 200);

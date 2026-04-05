@@ -27,7 +27,7 @@ public class ConstructionDetailService {
 
     public ConstructionDetailDto saveConstructionDetails(UUID constructionId, ConstructionDetailDto dto) {
         Construction construction = constructionRepository.findById(constructionId)
-                .orElseThrow(() -> new RuntimeException("Construction not found with id: " + constructionId));
+                .orElseThrow(() -> new RuntimeException("Constructions not found with id: " + constructionId));
 
         // Update basic information
         construction.setName(dto.getProjectName());
@@ -37,6 +37,55 @@ public class ConstructionDetailService {
         // Clear all existing details
         construction.getWorkshops().clear();
         construction.getSections().clear();
+
+        // Rebuild workshops from DTO
+        if (dto.getWorkshops() != null) {
+            for (ConstructionDetailDto.WorkshopDto workshopDto : dto.getWorkshops()) {
+                ConstructionWorkshop workshop = ConstructionWorkshop.builder()
+                        .id(workshopDto.getId() != null ? workshopDto.getId() : UUID.randomUUID())
+                        .orderId(workshopDto.getOrderId())
+                        .name(workshopDto.getName())
+                        .construction(construction)
+                        .build();
+                construction.getWorkshops().add(workshop);
+            }
+        }
+
+        // Rebuild sections and rows from DTO
+        if (dto.getSections() != null) {
+            for (ConstructionDetailDto.SectionDto sectionDto : dto.getSections()) {
+                ConstructionSection section = ConstructionSection.builder()
+                        .id(sectionDto.getId() != null ? sectionDto.getId() : UUID.randomUUID())
+                        .name(sectionDto.getName())
+                        .orderId(sectionDto.getOrderId())
+                        .construction(construction)
+                        .build();
+
+                // Serialize rows to JSON
+                if (sectionDto.getRows() != null && !sectionDto.getRows().isEmpty()) {
+                    try {
+                        section.setRows(objectMapper.writeValueAsString(sectionDto.getRows()));
+                    } catch (Exception e) {
+                        section.setRows("[]");
+                    }
+                } else {
+                    section.setRows("[]");
+                }
+
+                construction.getSections().add(section);
+            }
+        }
+
+        Construction saved = constructionRepository.save(construction);
+        return toDetailDto(saved);
+    }
+
+    public ConstructionDetailDto createConstructionDetails(ConstructionDetailDto dto) {
+        Construction construction = new Construction();
+        // Update basic information
+        construction.setName(dto.getProjectName());
+        construction.setMaterialPercent(dto.getMaterialPercent());
+        construction.setLaborPercent(dto.getLaborPercent());
 
         // Rebuild workshops from DTO
         if (dto.getWorkshops() != null) {

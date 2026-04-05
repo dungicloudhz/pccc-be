@@ -91,7 +91,7 @@ public class ConstructionDetailService {
         if (dto.getWorkshops() != null) {
             for (ConstructionDetailDto.WorkshopDto workshopDto : dto.getWorkshops()) {
                 ConstructionWorkshop workshop = ConstructionWorkshop.builder()
-                        .id(workshopDto.getId() != null ? workshopDto.getId() : UUID.randomUUID())
+//                        .id(UUID.randomUUID())
                         .orderId(workshopDto.getOrderId())
                         .name(workshopDto.getName())
                         .construction(construction)
@@ -104,7 +104,7 @@ public class ConstructionDetailService {
         if (dto.getSections() != null) {
             for (ConstructionDetailDto.SectionDto sectionDto : dto.getSections()) {
                 ConstructionSection section = ConstructionSection.builder()
-                        .id(sectionDto.getId() != null ? sectionDto.getId() : UUID.randomUUID())
+//                        .id(UUID.randomUUID())
                         .name(sectionDto.getName())
                         .orderId(sectionDto.getOrderId())
                         .construction(construction)

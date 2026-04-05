@@ -39,4 +39,13 @@ public class ConstructionSection {
     @Column(columnDefinition = "TEXT")
     @Builder.Default
     private String rows = "[]";
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof ConstructionSection)) return false;
+        ConstructionSection other = (ConstructionSection) o;
+        if (id == null || other.id == null) return false;
+        return id.equals(other.id);
+    }
 }

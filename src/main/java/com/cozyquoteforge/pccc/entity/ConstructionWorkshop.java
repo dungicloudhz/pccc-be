@@ -30,4 +30,13 @@ public class ConstructionWorkshop {
 
     @Column(name = "display_order")
     private Integer displayOrder;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof ConstructionWorkshop)) return false;
+        ConstructionWorkshop other = (ConstructionWorkshop) o;
+        if (id == null || other.id == null) return false;
+        return id.equals(other.id);
+    }
 }

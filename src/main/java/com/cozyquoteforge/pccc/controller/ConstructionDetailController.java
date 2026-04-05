@@ -18,13 +18,13 @@ public class ConstructionDetailController {
     private final ConstructionDetailService constructionDetailService;
 
     @GetMapping("/{id}/details")
-    @PreAuthorize("hasAuthority('ROLE_USER')")
+    @PreAuthorize("hasAnyAuthority('ROLE_USER','ROLE_ADMIN')")
     public ResponseEntity<ConstructionDetailDto> getConstructionDetails(@PathVariable UUID id) {
         return ResponseEntity.ok(constructionDetailService.getConstructionDetails(id));
     }
 
     @PutMapping("/{id}/details")
-    @PreAuthorize("hasAuthority('ROLE_USER')")
+    @PreAuthorize("hasAnyAuthority('ROLE_USER','ROLE_ADMIN')")
     public ResponseEntity<Map<String, Object>> saveConstructionDetails(
             @PathVariable UUID id,
             @RequestBody ConstructionDetailDto dto) {

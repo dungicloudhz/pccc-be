@@ -35,6 +35,8 @@ public class ConstructionDetailDto {
     @Builder
     public static class WorkshopDto {
         private UUID id;
+
+        private Integer orderId;
         private String name;
     }
 
@@ -54,6 +56,7 @@ public class ConstructionDetailDto {
     @Builder
     public static class SectionDto {
         private UUID id;
+        private Integer orderId;
         private String name;
         private List<RowDto> rows;
         @JsonProperty("id_sections")
@@ -66,6 +69,7 @@ public class ConstructionDetailDto {
     @Builder
     public static class RowDto {
         private String id; // Now productId
+        private Integer orderId;
         private Long productId; // Now productId
 
         private String code;

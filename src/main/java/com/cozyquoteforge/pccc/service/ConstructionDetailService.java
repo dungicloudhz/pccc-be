@@ -43,6 +43,7 @@ public class ConstructionDetailService {
             for (ConstructionDetailDto.WorkshopDto workshopDto : dto.getWorkshops()) {
                 ConstructionWorkshop workshop = ConstructionWorkshop.builder()
                         .id(workshopDto.getId() != null ? workshopDto.getId() : UUID.randomUUID())
+                        .orderId(workshopDto.getOrderId())
                         .name(workshopDto.getName())
                         .construction(construction)
                         .build();
@@ -56,6 +57,7 @@ public class ConstructionDetailService {
                 ConstructionSection section = ConstructionSection.builder()
                         .id(sectionDto.getId() != null ? sectionDto.getId() : UUID.randomUUID())
                         .name(sectionDto.getName())
+                        .orderId(sectionDto.getOrderId())
                         .construction(construction)
                         .build();
 
@@ -83,6 +85,7 @@ public class ConstructionDetailService {
                 .map(w -> ConstructionDetailDto.WorkshopDto.builder()
                         .id(w.getId())
                         .name(w.getName())
+                        .orderId(w.getOrderId())
                         .build())
                 .collect(Collectors.toList());
 
@@ -108,6 +111,7 @@ public class ConstructionDetailService {
                     return ConstructionDetailDto.SectionDto.builder()
                             .id(s.getId())
                             .name(s.getName())
+                            .orderId(s.getOrderId())
                             .rows(rowDtos)
                             .idSections(rowIds.stream()
                                     .map(UUID::toString)

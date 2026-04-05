@@ -30,6 +30,9 @@ public class ConstructionSection {
     @Column(nullable = false)
     private String name;
 
+    @Column(name = "order_id")
+    private Integer orderId;
+
     @Column(name = "display_order")
     private Integer displayOrder;
 

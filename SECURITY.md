@@ -87,6 +87,147 @@ Hệ thống authentication của PCCC Backend sử dụng JWT (JSON Web Tokens)
 
 **Lưu ý:** Người dùng đăng ký tự do sẽ có vai trò ROLE_USER.
 
+## User Profile API
+
+### Lấy Thông Tin Cá Nhân
+
+**Endpoint:** `GET /api/v1/users/me`
+
+**Header:**
+```
+Authorization: Bearer <your_jwt_token>
+```
+
+**Response:**
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "username": "testuser",
+  "email": "test@example.com",
+  "firstName": "Test",
+  "lastName": "User",
+  "role": "ROLE_USER",
+  "createdAt": "2024-01-15T10:30:00",
+  "updatedAt": "2024-01-15T10:30:00"
+}
+```
+
+**Status Codes:**
+- `200 OK`: Lấy thông tin thành công
+- `401 Unauthorized`: Token không hợp lệ hoặc hết hạn
+
+### Cập Nhật Thông Tin Cá Nhân
+
+**Endpoint:** `PUT /api/v1/users/me`
+
+**Header:**
+```
+Authorization: Bearer <your_jwt_token>
+```
+
+**Request Body:**
+```json
+{
+  "firstName": "NewFirstName",
+  "lastName": "NewLastName",
+  "email": "newemail@example.com"
+}
+```
+
+**Response:**
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "username": "testuser",
+  "email": "newemail@example.com",
+  "firstName": "NewFirstName",
+  "lastName": "NewLastName",
+  "role": "ROLE_USER",
+  "createdAt": "2024-01-15T10:30:00",
+  "updatedAt": "2024-01-15T11:45:30"
+}
+```
+
+**Status Codes:**
+- `200 OK`: Cập nhật thông tin thành công
+- `400 Bad Request`: Email đã được sử dụng bởi user khác
+- `401 Unauthorized`: Token không hợp lệ hoặc hết hạn
+
+**Lưu ý:** 
+- User có thể cập nhật firstName, lastName và email
+- Username, role không thể thay đổi thông qua endpoint này
+- Email phải chưa được sử dụng bởi user khác
+
+### Đổi Mật Khẩu
+
+**Endpoint:** `PUT /api/v1/users/me/password`
+
+**Header:**
+```
+Authorization: Bearer <your_jwt_token>
+```
+
+**Request Body:**
+```json
+{
+  "oldPassword": "currentPassword123",
+  "newPassword": "newSecurePassword456"
+}
+```
+
+**Response:** 200 OK (no body)
+
+**Status Codes:**
+- `200 OK`: Đổi mật khẩu thành công
+- `400 Bad Request`: Mật khẩu cũ không đúng
+- `401 Unauthorized`: Token không hợp lệ hoặc hết hạn
+
+**Lưu ý:**
+- Phải cung cấp mật khẩu cũ chính xác để đổi mật khẩu
+- Mật khẩu mới phải khác mật khẩu cũ
+
+### Reset Mật Khẩu (Admin Only)
+
+**Endpoint:** `PUT /api/v1/admin/users/{id}/reset-password`
+
+**Header:**
+```
+Authorization: Bearer <admin_jwt_token>
+```
+
+**Request Parameters:**
+- `id`: UUID của user cần reset mật khẩu
+
+**Request Body:**
+```json
+{
+  "newPassword": "newTemporaryPassword789"
+}
+```
+
+**Response:**
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "username": "testuser",
+  "email": "test@example.com",
+  "firstName": "Test",
+  "lastName": "User",
+  "role": "ROLE_USER",
+  "createdAt": "2024-01-15T10:30:00",
+  "updatedAt": "2024-01-15T11:45:30"
+}
+```
+
+**Status Codes:**
+- `200 OK`: Reset mật khẩu thành công
+- `404 Not Found`: User không tồn tại
+- `401 Unauthorized`: Không phải admin hoặc token hết hạn
+
+**Lưu ý:**
+- Chỉ admin mới có quyền reset mật khẩu cho user khác
+- Được sử dụng khi user quên mật khẩu hoặc cần cấp lại quyền truy cập
+
 ## Sử dụng JWT Token
 
 ### Gửi Token trong Request
@@ -198,7 +339,50 @@ curl -X POST "http://localhost:8081/api/v1/auth/login" \
   }'
 ```
 
-### 3. Truy Cập API Bảo Vệ
+### 3. Lấy Thông Tin Cá Nhân
+
+```bash
+curl -X GET "http://localhost:8081/api/v1/users/me" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN_HERE"
+```
+
+### 4. Cập Nhật Thông Tin Cá Nhân
+
+```bash
+curl -X PUT "http://localhost:8081/api/v1/users/me" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN_HERE" \
+  -d '{
+    "firstName": "NewFirstName",
+    "lastName": "NewLastName",
+    "email": "newemail@example.com"
+  }'
+```
+
+### 5. Đổi Mật Khẩu
+
+```bash
+curl -X PUT "http://localhost:8081/api/v1/users/me/password" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN_HERE" \
+  -d '{
+    "oldPassword": "currentPassword123",
+    "newPassword": "newSecurePassword456"
+  }'
+```
+
+### 6. Reset Mật Khẩu User (Admin Only)
+
+```bash
+curl -X PUT "http://localhost:8081/api/v1/admin/users/{user_id}/reset-password" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer ADMIN_JWT_TOKEN_HERE" \
+  -d '{
+    "newPassword": "newTemporaryPassword789"
+  }'
+```
+
+### 7. Truy Cập API Bảo Vệ
 
 ```bash
 curl -X GET "http://localhost:8081/api/v1/some-protected-endpoint" \

@@ -1,6 +1,7 @@
 package com.cozyquoteforge.pccc.controller;
 
 import com.cozyquoteforge.pccc.dto.RegisterRequest;
+import com.cozyquoteforge.pccc.dto.ResetPasswordRequest;
 import com.cozyquoteforge.pccc.dto.UpdateUserRequest;
 import com.cozyquoteforge.pccc.dto.UserDto;
 import com.cozyquoteforge.pccc.entity.Role;
@@ -54,6 +55,11 @@ public class UserController {
     @PutMapping("/{id}/role")
     public ResponseEntity<UserDto> updateUserRole(@PathVariable UUID id, @RequestBody UpdateUserRequest request) {
         return ResponseEntity.ok(userService.updateUserRole(id, request));
+    }
+
+    @PutMapping("/{id}/reset-password")
+    public ResponseEntity<UserDto> resetUserPassword(@PathVariable UUID id, @RequestBody ResetPasswordRequest request) {
+        return ResponseEntity.ok(userService.resetUserPassword(id, request));
     }
 
     @DeleteMapping("/{id}")

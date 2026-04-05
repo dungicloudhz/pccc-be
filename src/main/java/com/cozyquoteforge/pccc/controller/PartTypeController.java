@@ -18,31 +18,31 @@ public class PartTypeController {
     private final PartTypeService partTypeService;
 
     @GetMapping
-    @PreAuthorize("hasAnyAuthority('ROLE_USER','ROLE_ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ROLE_USER','ROLE_EDITOR','ROLE_ADMIN')")
     public ResponseEntity<List<PartTypeDto>> getAllPartTypes() {
         return ResponseEntity.ok(partTypeService.getAllPartTypes());
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('ROLE_USER','ROLE_ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ROLE_USER','ROLE_EDITOR','ROLE_ADMIN')")
     public ResponseEntity<PartTypeDto> getPartTypeById(@PathVariable UUID id) {
         return ResponseEntity.ok(partTypeService.getPartTypeById(id));
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyAuthority('ROLE_USER','ROLE_ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ROLE_EDITOR','ROLE_ADMIN')")
     public ResponseEntity<PartTypeDto> createPartType(@RequestBody PartTypeDto dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(partTypeService.createPartType(dto));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('ROLE_USER','ROLE_ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ROLE_EDITOR','ROLE_ADMIN')")
     public ResponseEntity<PartTypeDto> updatePartType(@PathVariable UUID id, @RequestBody PartTypeDto dto) {
         return ResponseEntity.ok(partTypeService.updatePartType(id, dto));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('ROLE_USER','ROLE_ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ROLE_EDITOR','ROLE_ADMIN')")
     public ResponseEntity<Void> deletePartType(@PathVariable UUID id) {
         partTypeService.deletePartType(id);
         return ResponseEntity.noContent().build();

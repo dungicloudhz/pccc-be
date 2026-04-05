@@ -2,7 +2,7 @@
 
 ## Tổng quan về Hệ thống Authentication
 
-Hệ thống authentication của PCCC Backend sử dụng JWT (JSON Web Tokens) để xác thực người dùng. Hệ thống hỗ trợ hai vai trò chính: USER và ADMIN.
+Hệ thống authentication của PCCC Backend sử dụng JWT (JSON Web Tokens) để xác thực người dùng. Hệ thống hỗ trợ ba vai trò chính: USER, EDITOR và ADMIN.
 
 ### Các Thành Phần Chính
 
@@ -15,11 +15,17 @@ Hệ thống authentication của PCCC Backend sử dụng JWT (JSON Web Tokens)
 
 ### ROLE_USER
 - Vai trò mặc định cho người dùng đăng ký tự do
-- Có thể truy cập các API được bảo vệ sau khi xác thực
+- Chỉ được phép xem dữ liệu và truy cập các API đọc
+
+### ROLE_EDITOR
+- Vai trò dành cho người chỉnh sửa
+- Được phép xem và chỉnh sửa dữ liệu (create/update/delete tài nguyên chức năng)
+- Không có quyền quản lý tài khoản người dùng
 
 ### ROLE_ADMIN
 - Vai trò quản trị viên
 - Có thể tạo và quản lý người dùng khác
+- Có toàn quyền truy cập tất cả các API
 - Được tạo tự động khi khởi động ứng dụng lần đầu
 
 ## API Endpoints Authentication

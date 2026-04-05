@@ -4,19 +4,21 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
 @Table(name = "constructions")
 @Data
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class Construction {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
+    @EqualsAndHashCode.Include
     private UUID id;
 
     @Column(nullable = false)
@@ -37,14 +39,16 @@ public class Construction {
     private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "construction", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("displayOrder ASC")
     @Builder.Default
     @ToString.Exclude
-    private List<ConstructionWorkshop> workshops = new ArrayList<>();
+    private Set<ConstructionWorkshop> workshops = new LinkedHashSet<>();
 
     @OneToMany(mappedBy = "construction", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("displayOrder ASC")
     @Builder.Default
     @ToString.Exclude
-    private List<ConstructionSection> sections = new ArrayList<>();
+    private Set<ConstructionSection> sections = new LinkedHashSet<>();
 
     @PrePersist
     protected void onCreate() {

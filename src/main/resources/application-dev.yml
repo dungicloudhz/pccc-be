@@ -8,7 +8,7 @@ spring:
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: update
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
@@ -21,7 +21,15 @@ spring:
     default-property-inclusion: non_null
 
 server:
-  port: 8080
+  port: 8081
+  address: 0.0.0.0
+
+# CORS Configuration - For Development
+# allowedOriginPatterns: "*" = Cho phép TẤT CẢ origins
+# allowCredentials: false = Không cần credentials
+cors:
+  allow-credentials: false
+  max-age: 3600
 
 logging:
   level:
@@ -30,3 +38,5 @@ logging:
     org.springframework.web: DEBUG
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
+

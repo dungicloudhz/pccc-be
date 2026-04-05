@@ -8,7 +8,6 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 @Data
@@ -43,10 +42,22 @@ public class ConstructionDetailDto {
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
+    public static class WorkshopValueDto {
+        private UUID workshopId;
+        private String tenXuong;
+        private BigDecimal value;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
     public static class SectionDto {
         private UUID id;
         private String name;
         private List<RowDto> rows;
+        @JsonProperty("id_sections")
+        private String idSections;
     }
 
     @Data
@@ -54,10 +65,8 @@ public class ConstructionDetailDto {
     @AllArgsConstructor
     @Builder
     public static class RowDto {
-        private UUID id;
-
-        @JsonProperty("productId")
-        private String productId;
+        private String id; // Now productId
+        private Long productId; // Now productId
 
         private String code;
         private String note;
@@ -75,6 +84,7 @@ public class ConstructionDetailDto {
         private BigDecimal laborPrice;
 
         @JsonProperty("workshopValues")
-        private Map<UUID, BigDecimal> workshopValues;
+        private List<WorkshopValueDto> workshopValues;
+
     }
 }

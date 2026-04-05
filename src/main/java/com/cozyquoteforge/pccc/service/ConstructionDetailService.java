@@ -3,6 +3,7 @@ package com.cozyquoteforge.pccc.service;
 import com.cozyquoteforge.pccc.dto.ConstructionDetailDto;
 import com.cozyquoteforge.pccc.entity.*;
 import com.cozyquoteforge.pccc.repository.ConstructionRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +16,7 @@ import java.util.stream.Collectors;
 @Transactional
 public class ConstructionDetailService {
     private final ConstructionRepository constructionRepository;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public ConstructionDetailDto getConstructionDetails(UUID constructionId) {
         Construction construction = constructionRepository.findByIdWithDetails(constructionId)
@@ -32,8 +34,11 @@ public class ConstructionDetailService {
         construction.setMaterialPercent(dto.getMaterialPercent());
         construction.setLaborPercent(dto.getLaborPercent());
 
-        // Clear and rebuild workshops
+        // Clear all existing details
         construction.getWorkshops().clear();
+        construction.getSections().clear();
+
+        // Rebuild workshops from DTO
         if (dto.getWorkshops() != null) {
             for (ConstructionDetailDto.WorkshopDto workshopDto : dto.getWorkshops()) {
                 ConstructionWorkshop workshop = ConstructionWorkshop.builder()
@@ -45,8 +50,7 @@ public class ConstructionDetailService {
             }
         }
 
-        // Clear and rebuild sections with rows
-        construction.getSections().clear();
+        // Rebuild sections and rows from DTO
         if (dto.getSections() != null) {
             for (ConstructionDetailDto.SectionDto sectionDto : dto.getSections()) {
                 ConstructionSection section = ConstructionSection.builder()
@@ -55,46 +59,15 @@ public class ConstructionDetailService {
                         .construction(construction)
                         .build();
 
-                if (sectionDto.getRows() != null) {
-                    for (ConstructionDetailDto.RowDto rowDto : sectionDto.getRows()) {
-                        ConstructionRow row = ConstructionRow.builder()
-                                .id(rowDto.getId() != null ? rowDto.getId() : UUID.randomUUID())
-                                .productId(rowDto.getProductId())
-                                .code(rowDto.getCode())
-                                .note(rowDto.getNote())
-                                .totalCable(rowDto.getTotalCable())
-                                .lossPercent(rowDto.getLossPercent())
-                                .materialPrice(rowDto.getMaterialPrice())
-                                .laborPrice(rowDto.getLaborPrice())
-                                .section(section)
-                                .build();
-
-                        // Add workshop values
-                        if (rowDto.getWorkshopValues() != null) {
-                            for (Map.Entry<UUID, java.math.BigDecimal> entry : rowDto.getWorkshopValues().entrySet()) {
-                                ConstructionRowWorkshopValue.ConstructionRowWorkshopValueId id =
-                                        new ConstructionRowWorkshopValue.ConstructionRowWorkshopValueId(
-                                                row.getId(), entry.getKey());
-
-                                ConstructionWorkshop workshop = construction.getWorkshops().stream()
-                                        .filter(w -> w.getId().equals(entry.getKey()))
-                                        .findFirst()
-                                        .orElse(null);
-
-                                if (workshop != null) {
-                                    ConstructionRowWorkshopValue value = ConstructionRowWorkshopValue.builder()
-                                            .id(id)
-                                            .row(row)
-                                            .workshop(workshop)
-                                            .value(entry.getValue())
-                                            .build();
-                                    row.getWorkshopValues().add(value);
-                                }
-                            }
-                        }
-
-                        section.getRows().add(row);
+                // Serialize rows to JSON
+                if (sectionDto.getRows() != null && !sectionDto.getRows().isEmpty()) {
+                    try {
+                        section.setRows(objectMapper.writeValueAsString(sectionDto.getRows()));
+                    } catch (Exception e) {
+                        section.setRows("[]");
                     }
+                } else {
+                    section.setRows("[]");
                 }
 
                 construction.getSections().add(section);
@@ -114,30 +87,33 @@ public class ConstructionDetailService {
                 .collect(Collectors.toList());
 
         List<ConstructionDetailDto.SectionDto> sectionDtos = construction.getSections().stream()
-                .map(s -> ConstructionDetailDto.SectionDto.builder()
-                        .id(s.getId())
-                        .name(s.getName())
-                        .rows(s.getRows().stream()
-                                .map(row -> {
-                                    Map<UUID, java.math.BigDecimal> workshopValues = new HashMap<>();
-                                    for (ConstructionRowWorkshopValue value : row.getWorkshopValues()) {
-                                        workshopValues.put(value.getWorkshop().getId(), value.getValue());
-                                    }
+                .map(s -> {
+                    List<ConstructionDetailDto.RowDto> rowDtos = new ArrayList<>();
+                    
+                    // Deserialize rows from JSON
+                    if (s.getRows() != null && !s.getRows().isEmpty()) {
+                        try {
+                            rowDtos = objectMapper.readValue(s.getRows(), 
+                                    objectMapper.getTypeFactory().constructCollectionType(List.class, ConstructionDetailDto.RowDto.class));
+                        } catch (Exception e) {
+                            rowDtos = new ArrayList<>();
+                        }
+                    }
 
-                                    return ConstructionDetailDto.RowDto.builder()
-                                            .id(row.getId())
-                                            .productId(row.getProductId())
-                                            .code(row.getCode())
-                                            .note(row.getNote())
-                                            .totalCable(row.getTotalCable())
-                                            .lossPercent(row.getLossPercent())
-                                            .materialPrice(row.getMaterialPrice())
-                                            .laborPrice(row.getLaborPrice())
-                                            .workshopValues(workshopValues)
-                                            .build();
-                                })
-                                .collect(Collectors.toList()))
-                        .build())
+                    List<UUID> rowIds = rowDtos.stream()
+                            .filter(r -> r.getId() != null)
+                            .map(r -> UUID.fromString(r.getId()))
+                            .collect(Collectors.toList());
+
+                    return ConstructionDetailDto.SectionDto.builder()
+                            .id(s.getId())
+                            .name(s.getName())
+                            .rows(rowDtos)
+                            .idSections(rowIds.stream()
+                                    .map(UUID::toString)
+                                    .collect(Collectors.joining(",")))
+                            .build();
+                })
                 .collect(Collectors.toList());
 
         return ConstructionDetailDto.builder()

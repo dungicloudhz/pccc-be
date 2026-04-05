@@ -13,7 +13,8 @@ import java.time.LocalDateTime;
 @Builder
 public class Product {
     @Id
-    private String id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     @Column(nullable = false)
     private String name;

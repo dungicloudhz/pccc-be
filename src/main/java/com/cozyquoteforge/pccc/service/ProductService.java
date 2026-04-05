@@ -30,7 +30,6 @@ public class ProductService {
 
     public ProductDto createProduct(ProductDto dto) {
         Product product = Product.builder()
-                .id(dto.getId())
                 .name(dto.getName())
                 .unit(dto.getUnit())
                 .category(dto.getCategory())

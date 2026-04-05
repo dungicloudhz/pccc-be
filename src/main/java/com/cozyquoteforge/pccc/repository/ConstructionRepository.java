@@ -10,6 +10,6 @@ import java.util.UUID;
 
 @Repository
 public interface ConstructionRepository extends JpaRepository<Construction, UUID> {
-    @Query("SELECT c FROM Construction c LEFT JOIN FETCH c.workshops LEFT JOIN FETCH c.sections s LEFT JOIN FETCH s.rows WHERE c.id = :id")
+    @Query("SELECT DISTINCT c FROM Construction c LEFT JOIN FETCH c.workshops LEFT JOIN FETCH c.sections WHERE c.id = :id")
     Optional<Construction> findByIdWithDetails(UUID id);
 }

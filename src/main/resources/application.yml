@@ -43,4 +43,14 @@ logging:
     org.springframework.web: INFO
     org.hibernate.SQL: DEBUG
 
+# JWT Configuration
+app:
+  jwt:
+    secret: mySecretKeyForJWTTokenGenerationAndValidationPurposesOnlyForDevelopmentEnvironment12345678901234567890
+    expiration: 86400000  # 24 hours in milliseconds
+  admin:
+    username: admin
+    password: admin123
+    email: admin@example.com
+
 

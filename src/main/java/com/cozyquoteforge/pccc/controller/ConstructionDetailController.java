@@ -4,6 +4,7 @@ import com.cozyquoteforge.pccc.dto.ConstructionDetailDto;
 import com.cozyquoteforge.pccc.service.ConstructionDetailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -17,11 +18,13 @@ public class ConstructionDetailController {
     private final ConstructionDetailService constructionDetailService;
 
     @GetMapping("/{id}/details")
+    @PreAuthorize("hasAuthority('ROLE_USER')")
     public ResponseEntity<ConstructionDetailDto> getConstructionDetails(@PathVariable UUID id) {
         return ResponseEntity.ok(constructionDetailService.getConstructionDetails(id));
     }
 
     @PutMapping("/{id}/details")
+    @PreAuthorize("hasAuthority('ROLE_USER')")
     public ResponseEntity<Map<String, Object>> saveConstructionDetails(
             @PathVariable UUID id,
             @RequestBody ConstructionDetailDto dto) {

@@ -73,9 +73,234 @@ Dưới đây là thiết kế các bảng dữ liệu cho PostgreSQL để lưu
 
 ---
 
-## 3. Danh sách API (Request và Response)
+## 3. Hệ thống Authentication và Security
 
-### 3.1. Danh mục hạng mục (Part Types)
+Hệ thống sử dụng JWT (JSON Web Token) để xác thực người dùng, kết hợp với Spring Security để bảo vệ các API endpoints.
+
+### 3.1. Tổng quan
+
+- **Authentication**: Sử dụng username/password với mã hóa BCrypt
+- **Authorization**: JWT Bearer Token với thời hạn 24 giờ
+- **Security Framework**: Spring Security với stateless session
+- **CORS**: Cho phép tất cả origins (có thể cấu hình lại cho production)
+
+### 3.2. Bảng Users
+
+* `id` (UUID, Primary Key)
+* `username` (VARCHAR, Unique, Not Null): Tên đăng nhập
+* `email` (VARCHAR, Unique, Not Null): Email
+* `password` (VARCHAR, Not Null): Mật khẩu mã hóa BCrypt
+* `first_name` (VARCHAR): Tên
+* `last_name` (VARCHAR): Họ
+* `role` (VARCHAR, Not Null): Vai trò (ROLE_USER, ROLE_ADMIN)
+* `created_at` (TIMESTAMP)
+* `updated_at` (TIMESTAMP)
+
+### 3.2.1. Roles và Quyền
+
+- **ROLE_USER**: Người dùng thông thường, có thể truy cập các API cơ bản
+- **ROLE_ADMIN**: Quản trị viên, có thể quản lý users và tất cả quyền của USER
+
+### 3.2.2. Admin mặc định
+
+Khi khởi động ứng dụng lần đầu, hệ thống sẽ tự động tạo tài khoản admin mặc định:
+- Username: `admin` (có thể cấu hình trong application.yml)
+- Password: `admin123` (có thể cấu hình trong application.yml)
+- Email: `admin@example.com` (có thể cấu hình trong application.yml)
+
+### 3.3. API Endpoints Authentication
+
+#### `POST /api/v1/auth/register`
+* Đăng ký tài khoản mới
+* **Request**:
+  ```json
+  {
+    "username": "nguyenvana",
+    "email": "nguyenvana@example.com",
+    "password": "password123",
+    "firstName": "Văn",
+    "lastName": "Nguyễn"
+  }
+  ```
+* **Response `200 OK`**:
+  ```json
+  {
+    "token": "eyJhbGciOiJIUzI1NiJ9...",
+    "type": "Bearer",
+    "username": "nguyenvana",
+    "email": "nguyenvana@example.com"
+  }
+  ```
+
+### 3.3. API Quản lý User (Admin only)
+
+#### `GET /api/v1/admin/users`
+* Lấy danh sách tất cả users
+* **Authorization**: Bearer token với ROLE_ADMIN
+* **Response `200 OK`**:
+  ```json
+  [
+    {
+      "id": "uuid",
+      "username": "nguyenvana",
+      "email": "nguyenvana@example.com",
+      "firstName": "Văn",
+      "lastName": "Nguyễn",
+      "role": "ROLE_USER",
+      "createdAt": "2023-10-01T12:00:00Z",
+      "updatedAt": "2023-10-01T12:00:00Z"
+    }
+  ]
+  ```
+
+#### `GET /api/v1/admin/users/{id}`
+* Lấy thông tin chi tiết user theo ID
+* **Authorization**: Bearer token với ROLE_ADMIN
+
+#### `POST /api/v1/admin/users`
+* Tạo user mới bởi admin
+* **Authorization**: Bearer token với ROLE_ADMIN
+* **Query Parameter**: `role` (ROLE_USER hoặc ROLE_ADMIN, mặc định ROLE_USER)
+* **Request**: Giống register request
+* **Response `201 Created`**: Thông tin user vừa tạo
+
+#### `PUT /api/v1/admin/users/{id}/role`
+* Cập nhật role của user
+* **Authorization**: Bearer token với ROLE_ADMIN
+* **Request**:
+  ```json
+  {
+    "role": "ROLE_ADMIN"
+  }
+  ```
+* **Response `200 OK`**: Thông tin user đã cập nhật
+
+#### `DELETE /api/v1/admin/users/{id}`
+* Xóa user
+* **Authorization**: Bearer token với ROLE_ADMIN
+* **Response `204 No Content`**
+
+**Lưu ý**: Admin không thể tự xóa tài khoản của mình hoặc hạ cấp role của chính mình.
+
+#### `POST /api/v1/auth/login`
+* Đăng nhập
+* **Request**:
+  ```json
+  {
+    "username": "nguyenvana",
+    "password": "password123"
+  }
+  ```
+* **Response `200 OK`**: Trả về JWT token (giống register)
+
+### 3.4. Sử dụng API với Authentication
+
+Tất cả API endpoints (trừ `/api/v1/auth/**`) đều yêu cầu authentication. Thêm header:
+
+```
+Authorization: Bearer <jwt_token>
+```
+
+**Ví dụ sử dụng curl**:
+```bash
+# 1. Đăng ký user thường
+curl -X POST http://localhost:8081/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"username":"user","email":"user@example.com","password":"123456","firstName":"Test","lastName":"User"}'
+
+# 2. Đăng nhập với admin mặc định
+curl -X POST http://localhost:8081/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"admin123"}'
+
+# 3. Lấy danh sách users (cần token admin)
+curl -X GET http://localhost:8081/api/v1/admin/users \
+  -H "Authorization: Bearer <admin_token>"
+
+# 4. Tạo user mới với role ADMIN
+curl -X POST "http://localhost:8081/api/v1/admin/users?role=ROLE_ADMIN" \
+  -H "Authorization: Bearer <admin_token>" \
+  -H "Content-Type: application/json" \
+  -d '{"username":"newadmin","email":"newadmin@example.com","password":"123456","firstName":"New","lastName":"Admin"}'
+
+# 5. Cập nhật role của user
+curl -X PUT http://localhost:8081/api/v1/admin/users/{user_id}/role \
+  -H "Authorization: Bearer <admin_token>" \
+  -H "Content-Type: application/json" \
+  -d '{"role":"ROLE_ADMIN"}'
+
+# 6. Xóa user
+curl -X DELETE http://localhost:8081/api/v1/admin/users/{user_id} \
+  -H "Authorization: Bearer <admin_token>"
+```
+
+### 3.5. Cấu hình Security
+
+#### application.yml
+```yaml
+app:
+  jwt:
+    secret: your-256-bit-secret-key-here
+    expiration: 86400000  # 24 giờ tính bằng ms
+  admin:
+    username: admin
+    password: admin123
+    email: admin@example.com
+
+# CORS Configuration
+cors:
+  allow-credentials: false
+  max-age: 86400
+```
+
+#### JWT Secret Key
+- Sử dụng key 256-bit (32 bytes) hoặc dài hơn
+- Trong production: Sử dụng environment variable hoặc secret management
+
+### 3.6. Bảo mật API
+
+- **Endpoints công khai**: `/api/v1/auth/**`
+- **Endpoints USER**: Tất cả endpoints khác yêu cầu `ROLE_USER` hoặc `ROLE_ADMIN`
+- **Endpoints ADMIN**: `/api/v1/admin/**` chỉ dành cho `ROLE_ADMIN`
+
+Tất cả endpoints được bảo vệ với `@PreAuthorize("hasAuthority('ROLE_USER')")` hoặc `@PreAuthorize("hasAuthority('ROLE_ADMIN')")`.
+
+### 3.7. Xử lý Lỗi Authentication
+
+- **401 Unauthorized**: Token không hợp lệ hoặc hết hạn
+- **403 Forbidden**: Không có quyền truy cập (cần ROLE_ADMIN cho admin endpoints)
+- **400 Bad Request**: Dữ liệu đăng ký không hợp lệ (username/email đã tồn tại)
+- **404 Not Found**: User không tồn tại
+- **409 Conflict**: Admin cố gắng tự hạ cấp role hoặc xóa tài khoản của mình
+
+### 3.8. Best Practices
+
+1. **Password Policy**: 
+   - Tối thiểu 8 ký tự
+   - Bao gồm chữ hoa, chữ thường, số, ký tự đặc biệt
+
+2. **JWT Expiration**: 
+   - Token ngắn hạn (24h) cho security
+   - Implement refresh token nếu cần
+
+3. **Role Management**:
+   - Cẩn thận khi cấp ROLE_ADMIN
+   - Admin không thể tự hạ cấp hoặc xóa tài khoản của mình
+   - Log tất cả thay đổi role và xóa user
+
+4. **HTTPS**: Luôn sử dụng HTTPS trong production
+
+5. **CORS**: Cấu hình allowed origins cụ thể thay vì "*"
+
+6. **Rate Limiting**: Thêm rate limiting cho auth endpoints
+
+7. **Logging**: Log các hoạt động authentication quan trọng
+
+---
+
+## 4. Danh sách API (Request và Response)
+
+### 4.1. Danh mục hạng mục (Part Types)
 
 #### `GET /api/v1/part-types`
 * Lấy danh sách các loại hạng mục.
@@ -112,7 +337,7 @@ Dưới đây là thiết kế các bảng dữ liệu cho PostgreSQL để lưu
 
 ---
 
-### 3.2. Quản lý Vật tư, Thiết bị (Products)
+### 4.2. Quản lý Vật tư, Thiết bị (Products)
 
 #### `GET /api/v1/products`
 * Lấy danh sách vật tư.
@@ -144,7 +369,7 @@ Dưới đây là thiết kế các bảng dữ liệu cho PostgreSQL để lưu
 
 ---
 
-### 3.3. Quản lý danh sách Công trình (Constructions)
+### 4.3. Quản lý danh sách Công trình (Constructions)
 
 #### `GET /api/v1/constructions`
 * Màn hình danh sách công trình (hiển thị tóm tắt, không load chi tiết row/section).
@@ -172,7 +397,7 @@ Dưới đây là thiết kế các bảng dữ liệu cho PostgreSQL để lưu
 
 ---
 
-### 3.4. API Chi tiết Dự toán Công trình (Construction Details)
+### 4.4. API Chi tiết Dự toán Công trình (Construction Details)
 Đây là API phức tạp nhất, nên gom nhóm vào một cấu trúc JSON JSON (Tree) để dễ dàng đồng bộ từ Frontend.
 
 #### `GET /api/v1/constructions/{id}/details`

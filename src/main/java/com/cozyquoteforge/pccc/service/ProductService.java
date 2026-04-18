@@ -43,6 +43,23 @@ public class ProductService {
         return toDto(saved);
     }
 
+    public List<ProductDto> createProducts(List<ProductDto> dtos) {
+        List<Product> products = dtos.stream()
+                .map(dto -> Product.builder()
+                        .name(dto.getName())
+                        .unit(dto.getUnit())
+                        .category(dto.getCategory())
+                        .origin(dto.getOrigin())
+                        .code(dto.getCode())
+                        .materialUnitPrice(dto.getMaterialUnitPrice())
+                        .laborUnitPrice(dto.getLaborUnitPrice())
+                        .lossPercent(dto.getLossPercent())
+                        .build())
+                .collect(Collectors.toList());
+        List<Product> saved = productRepository.saveAll(products);
+        return saved.stream().map(this::toDto).collect(Collectors.toList());
+    }
+
     public ProductDto updateProduct(String id, ProductDto dto) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));

@@ -34,6 +34,12 @@ public class ProductController {
         return ResponseEntity.status(HttpStatus.CREATED).body(productService.createProduct(dto));
     }
 
+    @PostMapping("/bulk")
+    @PreAuthorize("hasAnyAuthority('ROLE_EDITOR','ROLE_ADMIN')")
+    public ResponseEntity<List<ProductDto>> createProducts(@RequestBody List<ProductDto> dtos) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(productService.createProducts(dtos));
+    }
+
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('ROLE_EDITOR','ROLE_ADMIN')")
     public ResponseEntity<ProductDto> updateProduct(@PathVariable String id, @RequestBody ProductDto dto) {

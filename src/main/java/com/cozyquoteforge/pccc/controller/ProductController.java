@@ -29,7 +29,7 @@ public class ProductController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyAuthority('ROLE_EDITOR','ROLE_ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ROLE_EDITOR','ROLE_ADMIN','ROLE_ADMIN')")
     public ResponseEntity<ProductDto> createProduct(@RequestBody ProductDto dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(productService.createProduct(dto));
     }

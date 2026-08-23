@@ -1,6 +1,7 @@
 package com.cozyquoteforge.pccc.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,6 +19,8 @@ public class ProductDto {
     private String unit;
     private String category;
     private String origin;
+
+    @NotBlank(message = "Product code is required")
     private String code;
 
     @JsonProperty("materialUnitPrice")

@@ -1,5 +1,6 @@
 package com.cozyquoteforge.pccc.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -39,6 +40,9 @@ public class ConstructionDetailDto {
     public static class WorkshopDto {
         private UUID id;
 
+        @JsonProperty("id_workshops")
+        private UUID idWorkshops;
+
         private Integer orderId;
         private String name;
     }
@@ -58,7 +62,12 @@ public class ConstructionDetailDto {
     @AllArgsConstructor
     @Builder
     public static class SectionDto {
+        @JsonAlias("sectionId")
         private UUID id;
+
+        @JsonProperty("parentId")
+        private UUID parentId;
+
         private Integer orderId;
         private String name;
         private List<RowDto> rows;

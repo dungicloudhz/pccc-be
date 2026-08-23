@@ -2,12 +2,15 @@ package com.cozyquoteforge.pccc.service;
 
 import com.cozyquoteforge.pccc.dto.ProductDto;
 import com.cozyquoteforge.pccc.entity.Product;
+import com.cozyquoteforge.pccc.exception.ProductCodeAlreadyExistsException;
 import com.cozyquoteforge.pccc.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -22,13 +25,14 @@ public class ProductService {
                 .collect(Collectors.toList());
     }
 
-    public ProductDto getProductById(String id) {
+    public ProductDto getProductById(Long id) {
         return productRepository.findById(id)
                 .map(this::toDto)
                 .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
     }
 
     public ProductDto createProduct(ProductDto dto) {
+        validateUniqueCode(dto.getCode());
         Product product = Product.builder()
                 .name(dto.getName())
                 .unit(dto.getUnit())
@@ -44,6 +48,13 @@ public class ProductService {
     }
 
     public List<ProductDto> createProducts(List<ProductDto> dtos) {
+        Set<String> codes = new HashSet<>();
+        dtos.forEach(dto -> {
+            validateUniqueCode(dto.getCode());
+            if (hasCode(dto.getCode()) && !codes.add(dto.getCode())) {
+                throw new ProductCodeAlreadyExistsException(dto.getCode());
+            }
+        });
         List<Product> products = dtos.stream()
                 .map(dto -> Product.builder()
                         .name(dto.getName())
@@ -60,9 +71,12 @@ public class ProductService {
         return saved.stream().map(this::toDto).collect(Collectors.toList());
     }
 
-    public ProductDto updateProduct(String id, ProductDto dto) {
+    public ProductDto updateProduct(Long id, ProductDto dto) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
+        if (hasCode(dto.getCode()) && productRepository.existsByCodeAndIdNot(dto.getCode(), product.getId())) {
+            throw new ProductCodeAlreadyExistsException(dto.getCode());
+        }
         product.setName(dto.getName());
         product.setUnit(dto.getUnit());
         product.setCategory(dto.getCategory());
@@ -75,7 +89,7 @@ public class ProductService {
         return toDto(updated);
     }
 
-    public void deleteProduct(String id) {
+    public void deleteProduct(Long id) {
         productRepository.deleteById(id);
     }
 
@@ -91,5 +105,18 @@ public class ProductService {
                 .laborUnitPrice(product.getLaborUnitPrice())
                 .lossPercent(product.getLossPercent())
                 .build();
+    }
+
+    private void validateUniqueCode(String code) {
+        if (!hasCode(code)) {
+            throw new IllegalArgumentException("Product code is required");
+        }
+        if (productRepository.existsByCode(code)) {
+            throw new ProductCodeAlreadyExistsException(code);
+        }
+    }
+
+    private boolean hasCode(String code) {
+        return code != null && !code.isBlank();
     }
 }

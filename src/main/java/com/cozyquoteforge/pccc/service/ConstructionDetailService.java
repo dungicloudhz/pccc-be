@@ -29,112 +29,87 @@ public class ConstructionDetailService {
         Construction construction = constructionRepository.findById(constructionId)
                 .orElseThrow(() -> new RuntimeException("Constructions not found with id: " + constructionId));
 
-        // Update basic information
-        construction.setName(dto.getProjectName());
-        construction.setVatPercent(dto.getVatPercent());
-        construction.setMaterialPercent(dto.getMaterialPercent());
-        construction.setLaborPercent(dto.getLaborPercent());
-
-        // Clear all existing details
-        construction.getWorkshops().clear();
-        construction.getSections().clear();
-
-        // Rebuild workshops from DTO
-        if (dto.getWorkshops() != null) {
-            for (ConstructionDetailDto.WorkshopDto workshopDto : dto.getWorkshops()) {
-                ConstructionWorkshop workshop = ConstructionWorkshop.builder()
-                        .id(workshopDto.getId() != null ? workshopDto.getId() : UUID.randomUUID())
-                        .orderId(workshopDto.getOrderId())
-                        .name(workshopDto.getName())
-                        .construction(construction)
-                        .build();
-                construction.getWorkshops().add(workshop);
-            }
-        }
-
-        // Rebuild sections and rows from DTO
-        if (dto.getSections() != null) {
-            for (ConstructionDetailDto.SectionDto sectionDto : dto.getSections()) {
-                ConstructionSection section = ConstructionSection.builder()
-                        .id(sectionDto.getId() != null ? sectionDto.getId() : UUID.randomUUID())
-                        .name(sectionDto.getName())
-                        .orderId(sectionDto.getOrderId())
-                        .construction(construction)
-                        .build();
-
-                // Serialize rows to JSON
-                if (sectionDto.getRows() != null && !sectionDto.getRows().isEmpty()) {
-                    try {
-                        section.setRows(objectMapper.writeValueAsString(sectionDto.getRows()));
-                    } catch (Exception e) {
-                        section.setRows("[]");
-                    }
-                } else {
-                    section.setRows("[]");
-                }
-
-                construction.getSections().add(section);
-            }
-        }
-
-        Construction saved = constructionRepository.save(construction);
-        return toDetailDto(saved);
+        applyDetails(construction, dto, true);
+        return toDetailDto(constructionRepository.save(construction));
     }
 
     public ConstructionDetailDto createConstructionDetails(ConstructionDetailDto dto) {
         Construction construction = new Construction();
-        // Update basic information
+        applyDetails(construction, dto, false);
+        constructionRepository.save(construction);
+        return toDetailDto(construction);
+    }
+
+    private void applyDetails(Construction construction, ConstructionDetailDto dto, boolean replaceExisting) {
         construction.setName(dto.getProjectName());
         construction.setVatPercent(dto.getVatPercent());
         construction.setMaterialPercent(dto.getMaterialPercent());
         construction.setLaborPercent(dto.getLaborPercent());
 
-        // Rebuild workshops from DTO
+        if (replaceExisting) {
+            construction.getWorkshops().clear();
+            construction.getSections().clear();
+        }
+
         if (dto.getWorkshops() != null) {
             for (ConstructionDetailDto.WorkshopDto workshopDto : dto.getWorkshops()) {
-                ConstructionWorkshop workshop = ConstructionWorkshop.builder()
-//                        .id(UUID.randomUUID())
+                UUID workshopId = replaceExisting
+                    ? (workshopDto.getId() != null
+                    ? workshopDto.getId() : workshopDto.getIdWorkshops())
+                    : null;
+                construction.getWorkshops().add(ConstructionWorkshop.builder()
+                        .id(workshopId)
                         .orderId(workshopDto.getOrderId())
                         .name(workshopDto.getName())
                         .construction(construction)
-                        .build();
-                construction.getWorkshops().add(workshop);
+                        .build());
             }
         }
 
-        // Rebuild sections and rows from DTO
         if (dto.getSections() != null) {
             for (ConstructionDetailDto.SectionDto sectionDto : dto.getSections()) {
+                UUID sectionId = sectionDto.getId() != null
+                        ? sectionDto.getId() : parseUuid(sectionDto.getIdSections());
                 ConstructionSection section = ConstructionSection.builder()
-//                        .id(UUID.randomUUID())
+                        .id(sectionId != null ? sectionId : UUID.randomUUID())
+                        .parentId(sectionDto.getParentId())
                         .name(sectionDto.getName())
                         .orderId(sectionDto.getOrderId())
                         .construction(construction)
+                        .rows(serializeRows(sectionDto.getRows()))
                         .build();
-
-                // Serialize rows to JSON
-                if (sectionDto.getRows() != null && !sectionDto.getRows().isEmpty()) {
-                    try {
-                        section.setRows(objectMapper.writeValueAsString(sectionDto.getRows()));
-                    } catch (Exception e) {
-                        section.setRows("[]");
-                    }
-                } else {
-                    section.setRows("[]");
-                }
-
                 construction.getSections().add(section);
             }
         }
+    }
 
-        Construction saved = constructionRepository.save(construction);
-        return toDetailDto(saved);
+    private String serializeRows(List<ConstructionDetailDto.RowDto> rows) {
+        if (rows == null || rows.isEmpty()) {
+            return "[]";
+        }
+        try {
+            return objectMapper.writeValueAsString(rows);
+        } catch (Exception e) {
+            return "[]";
+        }
+    }
+
+    private UUID parseUuid(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return UUID.fromString(value);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 
     private ConstructionDetailDto toDetailDto(Construction construction) {
         List<ConstructionDetailDto.WorkshopDto> workshopDtos = construction.getWorkshops().stream()
                 .map(w -> ConstructionDetailDto.WorkshopDto.builder()
                         .id(w.getId())
+                    .idWorkshops(w.getId())
                         .name(w.getName())
                         .orderId(w.getOrderId())
                         .build())
@@ -154,19 +129,13 @@ public class ConstructionDetailService {
                         }
                     }
 
-                    List<UUID> rowIds = rowDtos.stream()
-                            .filter(r -> r.getId() != null)
-                            .map(r -> UUID.fromString(r.getId()))
-                            .collect(Collectors.toList());
-
                     return ConstructionDetailDto.SectionDto.builder()
                             .id(s.getId())
+                            .idSections(s.getId() != null ? s.getId().toString() : null)
+                            .parentId(s.getParentId())
                             .name(s.getName())
                             .orderId(s.getOrderId())
                             .rows(rowDtos)
-                            .idSections(rowIds.stream()
-                                    .map(UUID::toString)
-                                    .collect(Collectors.joining(",")))
                             .build();
                 })
                 .collect(Collectors.toList());

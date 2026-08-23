@@ -18,7 +18,6 @@ import java.util.Map;
 @Builder
 public class ConstructionSection {
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     @EqualsAndHashCode.Include
     private UUID id;
 
@@ -32,6 +31,9 @@ public class ConstructionSection {
 
     @Column(name = "order_id")
     private Integer orderId;
+
+    @Column(name = "parent_id")
+    private UUID parentId;
 
     @Column(name = "display_order")
     private Integer displayOrder;

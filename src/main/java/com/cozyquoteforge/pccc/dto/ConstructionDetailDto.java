@@ -20,6 +20,9 @@ public class ConstructionDetailDto {
     @JsonProperty("projectName")
     private String projectName;
 
+    @JsonProperty("vatPercent")
+    private BigDecimal vatPercent;
+
     @JsonProperty("materialPercent")
     private BigDecimal materialPercent;
 

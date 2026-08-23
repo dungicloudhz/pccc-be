@@ -31,6 +31,7 @@ public class ConstructionDetailService {
 
         // Update basic information
         construction.setName(dto.getProjectName());
+        construction.setVatPercent(dto.getVatPercent());
         construction.setMaterialPercent(dto.getMaterialPercent());
         construction.setLaborPercent(dto.getLaborPercent());
 
@@ -84,6 +85,7 @@ public class ConstructionDetailService {
         Construction construction = new Construction();
         // Update basic information
         construction.setName(dto.getProjectName());
+        construction.setVatPercent(dto.getVatPercent());
         construction.setMaterialPercent(dto.getMaterialPercent());
         construction.setLaborPercent(dto.getLaborPercent());
 
@@ -172,6 +174,7 @@ public class ConstructionDetailService {
         return ConstructionDetailDto.builder()
                 .id(construction.getId())
                 .projectName(construction.getName())
+                .vatPercent(construction.getVatPercent())
                 .materialPercent(construction.getMaterialPercent())
                 .laborPercent(construction.getLaborPercent())
                 .workshops(workshopDtos)

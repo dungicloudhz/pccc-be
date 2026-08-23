@@ -28,6 +28,9 @@ public class Construction {
     @Builder.Default
     private BigDecimal materialPercent = BigDecimal.valueOf(100);
 
+    @Column(name = "vat_percent")
+    private BigDecimal vatPercent;
+
     @Column(name = "labor_percent")
     @Builder.Default
     private BigDecimal laborPercent = BigDecimal.valueOf(100);
